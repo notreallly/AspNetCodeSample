@@ -40,7 +40,7 @@ namespace SampleApp
                 .AddCommandLine(args)
                 .Build();
 
-            var scenario = config1["scenario"] ?? "basic";
+            var scenario = config1["scenario"] ?? "liveness";
 
             if (!_scenarios.TryGetValue(scenario, out var startupType))
             {

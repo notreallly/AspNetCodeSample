@@ -1,4 +1,5 @@
-﻿using System.Threading;
+using System.Net.NetworkInformation;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -21,18 +22,41 @@ namespace SampleApp
             set => _startupTaskCompleted = value;
         }
 
-        public Task<HealthCheckResult> CheckHealthAsync(
+        public async Task<HealthCheckResult> CheckHealthAsync(
             HealthCheckContext context,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (StartupTaskCompleted)
+            try
+            {
+                using (var ping = new Ping())
+                {
+                    var reply = await ping.SendPingAsync("10.9.42.24", 1000);
+                    if (reply.Status != IPStatus.Success)
+                    {
+                        return HealthCheckResult.Unhealthy("Ping Failure");
+                    }
+
+                    if (reply.RoundtripTime >= 1000)
+                    {
+                        return HealthCheckResult.Degraded("Ping Timeout");
+                    }
+
+                    return HealthCheckResult.Healthy("Pong");
+                }
+            }
+            catch
+            {
+                return HealthCheckResult.Unhealthy("Ping Error");
+            }
+
+ /**           if (StartupTaskCompleted)
             {
                 return Task.FromResult(
                     HealthCheckResult.Healthy("The startup task is finished."));
             }
 
-            return Task.FromResult(
-                HealthCheckResult.Unhealthy("The startup task is still running."));
+           return Task.FromResult(
+                HealthCheckResult.Unhealthy("The startup task is still running.")); **/
         }
     }
     // </snippet1>
